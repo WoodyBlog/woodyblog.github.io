@@ -1,0 +1,63 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><meta name="author"><title>Langchain4J在Springboot中两种集成方式：编程式vs声明式 · Woody Wang</title><meta name="description" content="A Blog Powered By Hexo"><meta name="keywords" content=""><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="renderer" content="webkit"><link rel="short icon" href="/images/favicon.png" type="image/x-icon"><link rel="stylesheet" href="/css/bootstrap.min.css"><link rel="stylesheet" href="/css/font-awesome.min.css"><link rel="stylesheet" href="/css/style.css"><link rel="alternate" type="application/atom+xml" title="ATOM 1.0" href="/atom.xml"><meta name="generator" content="Hexo"><link rel="stylesheet" href="/css/prism.css" type="text/css">
+<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head><body><div class="container" id="stage"><div class="row"><div class="col-sm-3 col-xs-12 side-container invisible" id="side-bar"><div class="vertical-text site-title"><h3 class="site-title-small" tabindex="-1"><a class="a-title" href="/">Woody Wang's Blog</a></h3><h1 class="site-title-large" tabindex="-1"><a class="a-title" href="/">保持克制|无限进步</a></h1></div><br class="visible-lg visible-md visible-sm"><div class="site-title-links" id="site-nav"><ul><li><a class="" href="/">Home</a></li><li><a class="" href="/archives">Archive</a></li><li><a class="" href="/tags">Tags</a></li><li class="soc"><a href="https://woodyblog.github.io/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="RSS"><i class="fa fa-rss">&nbsp;</i></a></li></ul><div class="visible-lg visible-md visible-sm site-nav-footer"><br class="site-nav-footer-br"><footer><p>&copy;&nbsp;2026&nbsp;<a target="_blank" href="https://woodyblog.github.io" rel="noopener noreferrer">Woody Wang</a></p><p>Theme&nbsp;<a target="_blank" href="https://github.com/SumiMakito/hexo-theme-typography" rel="noopener noreferrer">Typography</a>&nbsp;by&nbsp;<a target="_blank" href="https://www.keep.moe" rel="noopener noreferrer">Makito</a></p><p>Proudly published with&nbsp;<a target="_blank" href="https://hexo.io" rel="noopener noreferrer">Hexo</a></p></footer></div></div></div><div class="col-sm-9 col-xs-12 main-container invisible" id="main-container"><div class="autopagerize_page_element"><div class="content"><div class="post-page"><div class="post-container"><p class="post-title"><a>Langchain4J在Springboot中两种集成方式：编程式vs声明式</a></p><p class="post-meta"><span class="date meta-item">Posted at&nbsp;2026-05-03</span><span class="meta-item"><i class="fa fa-tag"></i><span>&nbsp;</span><a class="a-tag" href="/tags/Langchain4J/" title="Langchain4J">Langchain4J</a><span>&nbsp;</span></span></p><div class="post-abstract"><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>最近在学习Langchain4J，考虑通过Langchain4J调用Agent用于数据安全策略的自动化更新与迭代，但是我之前没有接触过Java，因此考虑速成使用，在学习Langchan4J的时候，我了解到两种不同的使用方法，因此作为一个记录和对比。<br>在传统的<code>Spring</code>开发中，我们通常会写一个 <code>ConsultantServiceImpl</code> 类来实现 <code>ConsultantService</code> 接口，并在里面写具体的业务逻辑代码。<br>但是在<code>Langchain4J</code>中，我们不需要实现类：</p>
+<ul>
+<li><strong><code>ConsultantService</code> 接口</strong>：只是一个“契约”或“遥控器”。它定义了你能做什么（比如 <code>chat</code>），但没定义怎么做。</li>
+<li><strong><code>AiServices</code><strong>：它是“工厂”。它读取你的接口，利用 Java 的</strong>动态代理</strong>技术，在内存中实时生成了一个实现了该接口的对象。</li>
+</ul>
+<h2 id="共有内容"><a href="#共有内容" class="headerlink" title="共有内容"></a>共有内容</h2><p>当我想实现一个简单的<code>AIService</code>，有些内容是通用的，分别是：</p>
+<ol>
+<li>添加依赖</li>
+</ol>
+<p>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10  </p>
+<dependency>    
+    <groupId>dev.langchain4j</groupId>    
+    <artifactId>langchain4j-open-ai-spring-boot4-starter</artifactId>    
+    <version>1.14.0\-beta24</version>    
+</dependency>    
+<dependency>    
+    <groupId>dev.langchain4j</groupId>    
+    <artifactId>langchain4j-spring-boot4-starter</artifactId>    
+    <version>1.14.0\-beta24</version>    
+</dependency>  
+
+<ol start="2">
+<li>定义接口</li>
+</ol>
+<p>1<br>2<br>3<br>4<br>5<br>6<br>7  </p>
+<p>package org.example.cosultant.aiservice;    </p>
+<p>import dev.langchain4j.service.spring.AiService;<br>import dev.langchain4j.service.spring.AiServiceWiringMode;<br>public interface ConsultantService {<br>    public String chat(String message);<br>}  </p>
+<ol start="3">
+<li>注入使用</li>
+</ol>
+<p>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br>11<br>12<br>13<br>14<br>15<br>16<br>17<br>18  </p>
+<p>package org.example.cosultant.controller;    </p>
+<p>import dev.langchain4j.model.openai.OpenAiChatModel;<br>import org.example.cosultant.aiservice.ConsultantService;<br>import org.springframework.beans.factory.annotation.Autowired;<br>import org.springframework.web.bind.annotation.RequestMapping;<br>import org.springframework.web.bind.annotation.RestController;    </p>
+<p>@RestController<br>public class ChatController {<br>    @Autowired<br>    private ConsultantService consultantService;<br>    @RequestMapping(“&#x2F;chat”)<br>    public String chat(String message){<br>        String result = consultantService.chat(message);<br>        return result;<br>    }<br>}  </p>
+<p>区别在于编程式的方法，在定义完接口后，需要通过<code>AIService</code>在后台创建一个隐形的类，这个类的 <code>chat</code> 方法里封装了调用 OpenAI 接口、处理上下文、解析结果的所有复杂逻辑。然后，它把这个<strong>代理对象</strong>注册到了 Spring 容器中。</p>
+<h2 id="为什么需要这两种集成方式"><a href="#为什么需要这两种集成方式" class="headerlink" title="为什么需要这两种集成方式"></a>为什么需要这两种集成方式</h2><p>在Java生态中，LangChain4j作为最成熟的LLM应用框架，与Spring Boot的集成提供了两种主流开发范式：<br>●<strong>编程式（Programming Mode）</strong>：通过<code>AiServices.builder()</code>手动构建AI服务<br>●<strong>声明式（Declarative Mode）</strong>：通过<code>@AiService</code>注解自动装配AI服务<br>两种方式都能实现AI服务与Spring容器的集成，但设计哲学和实现细节存在本质差异。本文将从<strong>技术原理</strong>、<strong>代码结构</strong>、<strong>适用场景</strong>三个维度进行深度对比。</p>
+<h2 id="原理剖析"><a href="#原理剖析" class="headerlink" title="原理剖析"></a>原理剖析</h2><h3 id="编程式"><a href="#编程式" class="headerlink" title="编程式"></a>编程式</h3><p><strong>实现原理</strong>：</p>
+<ol>
+<li>开发者显式调用<code>AiServices.builder()</code>，通过链式调用指定<code>chatModel</code>、<code>chatMemory</code>等依赖</li>
+<li>在<code>@Configuration</code>类中通过<code>@Bean</code>将构建好的服务注册到Spring容器</li>
+<li>本质是<strong>工厂方法模式</strong>，开发者完全控制对象的创建过程<br><strong>代码示例</strong>：</li>
+</ol>
+<p>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br>11<br>12<br>13<br>14<br>15<br>16<br>17<br>18<br>19<br>20<br>21<br>22<br>23<br>24  </p>
+<p>package org.example.cosultant.config;    </p>
+<p>import dev.langchain4j.model.openai.OpenAiChatModel;<br>import dev.langchain4j.service.AiServices;<br>import org.example.cosultant.aiservice.ConsultantService;<br>import org.springframework.beans.factory.annotation.Autowired;<br>import org.springframework.context.annotation.Bean;<br>import org.springframework.context.annotation.Configuration;    </p>
+<p>@Configuration<br>public class CommonConfig {<br>    @Autowired<br>    private OpenAiChatModel model;<br>   %%1. AiServices 读取 ConsultantService 接口的定义<br>     2. 它将接口与你配置好的 OpenAiChatModel (大模型) 绑定<br>     3. .build() 方法会在内存中生成一个“代理对象”  %%<br>    @Bean<br>    public ConsultantService consultantService(){<br>        ConsultantService consultantService&#x3D; AiServices.builder(ConsultantService.class)<br>                .chatModel(model)<br>                .build();<br>        return consultantService;<br>    }<br>}  </p>
+<p><strong>技术特点</strong>：<br>这种技术的缺点很明显，代码冗余，需维护配置类与接口的绑定关系，作为小白的我一下子是看不明白为啥要这么写的，但是优点也很明显，就是灵活性高。<br>当我们这么写了以后，Spring 启动，扫描 <code>CommonConfig</code> 类，发现<code>CommonConfig</code>里有一个字段<code>model</code>贴着<code>@Autowired</code> 标签。Spring 去自己的容器（BeanFactory）里找类型为 <code>OpenAiChatModel</code> 的对象，LangChain4j 自动配置类早就创建了一个 <code>OpenAiChatModel</code> 的 Bean 放在容器里了，Spring 通过<strong>反射机制</strong>，强行把找到的那个 Bean 赋值给 <code>private</code> 字段 <code>model</code>（即使它是私有的，Spring 也能通过 <code>setAccessible(true)</code> 修改它），然后我们在<code>consultantService()</code>方法就能直接使用<code>model</code>了。<br>再来说为何<code>consultantService()</code>要这么写，我们刚才定义了一个没有实体的接口，如果要使用它，就要把它<strong>变成一个能干活并注册到 Spring 容器里的 Bean</strong>。<br>在方法前面写<code>@Bean</code>是告诉 Spring 容器，“这个方法返回的对象，请你帮我管理起来”。我们在<code>controller</code>方法中用<code>AutoWired</code>想要注入<code>ConsultantService</code>。如果没有这个<code>@Bean</code>，Spring 容器里就没有这个服务的实例，启动时就会报错。然而<code>ConsultantService</code>只是一个<code>interface</code>,接口是不能直接<code>new</code>的，通常我们需要写一个 <code>ConsultantServiceImpl</code> 类来实现它。<br>但是<code>Langchain4J</code>提供了一种代理注入的方法，通过:</p>
+<p>1<br>2<br>3  </p>
+<p>ConsultantService consultantService&#x3D; AiServices.builder(ConsultantService.class)<br>                .chatModel(model)<br>                .build();   </p>
+<p>上述方法它在内存中动态生成了一个“代理对象”（JDK 动态代理）。- 这个代理对象实现了 <code>ConsultantService</code> 接口。- 它的内部逻辑被设定为：收到调用 -&gt; 发给 AI -&gt; 返回结果。<br>这段代码利用<strong>工厂模式</strong>和<strong>动态代理</strong>，帮我们一行代码就搞定了所有这些复杂的实现逻辑，否则我们需要手动去写一个 <code>ConsultantServiceImpl</code> 类，并在里面写几十行代码来处理 HTTP 请求、上下文记忆和 AI 调用。</p>
+<h2 id="声明式"><a href="#声明式" class="headerlink" title="声明式"></a>声明式</h2><p>如果我们考虑使用声明式的方法调用<code>AIService</code>，只需要在<code>ConsultantService</code>接口声明的上面，添加注解:</p>
+<p>1<br>2<br>3<br>4<br>5  </p>
+<p>@AiService(<br>        wiringMode &#x3D; AiServiceWiringMode.EXPLICIT,&#x2F;&#x2F;手动装配<br>        chatModel &#x3D; “openAiChatModel”&#x2F;&#x2F;AI模型<br>)  </p>
+<p>这样框架在启动时自动扫描并生成代理对象，依赖通过注解属性（如<code>chatModel</code>）显式指定，或默认自动注入。<br>这样就不需要<code>@Bean</code>直接调用<code>ConsultantService</code>接口实现的方法了。</p>
+<h2 id="自我启发"><a href="#自我启发" class="headerlink" title="自我启发"></a>自我启发</h2><p>由于刚开始学习Java和Langchain4J，很多常见的设计模式我都不懂，通过两种不同的方法，使用<code>AIService</code>,我理解到了自身很多的缺点和需要补充的，具体如下：</p>
+<ul>
+<li><strong>Spring AOP动态代理学习与理解</strong></li>
+<li><strong>工厂方法模式理解</strong></li>
+<li><strong>Bean工作流程理解</strong><br>后续会在学习Langchain4J的基础上，有意识的进行补充和学习。</li>
+</ul>
+</div></div><div class="share"><span>Share</span>&nbsp;<span class="soc"><a class="fa fa-twitter" target="_blank" rel="noopener" href="http://twitter.com/home?status=https://woodyblog.github.io/2026/05/03/Langchain4J%E5%9C%A8Springboot%E4%B8%AD%E4%B8%A4%E7%A7%8D%E9%9B%86%E6%88%90%E6%96%B9%E5%BC%8F%EF%BC%9A%E7%BC%96%E7%A8%8B%E5%BC%8Fvs%E5%A3%B0%E6%98%8E%E5%BC%8F/%20Woody Wang%20Langchain4J在Springboot中两种集成方式：编程式vs声明式"></a></span></div><div class="pagination"><p class="clearfix"><span class="pre pagbuttons"><a role="navigation" href="/2026/05/06/%E4%BA%94%E6%9C%88%E7%9A%84%E4%B8%80%E4%BA%9BOKR%E4%B8%8E%E6%84%BF%E6%99%AF/" title="五月的一些OKR与愿景"><i class="fa fa-angle-double-left"></i>&nbsp;Previous post: 五月的一些OKR与愿景</a></span><span class="next pagbuttons"><a role="navigation" href="/2026/05/01/%E5%BD%93%E6%9C%89%E4%B8%80%E5%A4%A9%EF%BC%8C%E6%88%91%E7%9C%9F%E6%AD%A3%E7%A6%BB%E5%BC%80%E5%AD%A6%E6%A0%A1/" title="当有一天，我真正离开学校">Next post: 当有一天，我真正离开学校&nbsp;<i class="fa fa-angle-double-right"></i></a></span></p></div></div></div></div>
+</div></div></div><div class="visible-xs site-bottom-footer"><footer><p>&copy;&nbsp;2026&nbsp;<a target="_blank" href="https://woodyblog.github.io" rel="noopener noreferrer">Woody Wang</a></p><p>Theme&nbsp;<a target="_blank" href="https://github.com/SumiMakito/hexo-theme-typography" rel="noopener noreferrer">Typography</a>&nbsp;by&nbsp;<a target="_blank" href="https://www.keep.moe" rel="noopener noreferrer">Makito</a></p><p>Proudly published with&nbsp;<a target="_blank" href="https://hexo.io" rel="noopener noreferrer">Hexo</a></p></footer></div><script src="/js/jquery-3.1.0.min.js"></script><script src="/js/bootstrap.min.js"></script><script src="/js/jquery-migrate-1.2.1.min.js"></script><script src="/js/jquery.appear.js"></script><script src="/js/google-analytics.js"></script><script src="/js/typography.js"></script></body></html>
