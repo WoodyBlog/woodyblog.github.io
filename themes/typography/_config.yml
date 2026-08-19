@@ -1,0 +1,5 @@
+# Theme Configuration
+menu:
+  Home: /
+  Archive: /archives
+  Tags: /tags
